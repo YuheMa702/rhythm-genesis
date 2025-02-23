@@ -1,0 +1,38 @@
+# Ignore build files and CMake cache
+/build/
+CMakeCache.txt
+CMakeFiles/
+Makefile
+cmake_install.cmake
+
+# Ignore compiled binaries
+*.o
+*.obj
+*.exe
+*.out
+*.app
+*.a
+*.so
+*.dll
+
+# Ignore IDE/Editor-specific files
+.vscode/
+.idea/
+*.swp
+*.swo
+*.bak
+*.tmp
+
+# Ignore logs
+logs/
+*.log
+
+# Ignore third-party dependencies 
+third_party/spdlog/.git/
+
+# Ignore SFML dependency folders 
+SFML/
+
+# Ignore user-specific config files
+*.DS_Store
+*.directory
