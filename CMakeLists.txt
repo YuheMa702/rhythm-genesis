@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 project(IrisEngine)
 
-# Force using Clang++
+# Force using Clang++ cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ .. && make -j$(nproc)
 set(CMAKE_C_COMPILER clang)
 set(CMAKE_CXX_COMPILER clang++)
 
