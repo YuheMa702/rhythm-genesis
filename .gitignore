@@ -1,5 +1,6 @@
 # Ignore build files and CMake cache
 /build/
+/assets/beatmaps
 CMakeCache.txt
 CMakeFiles/
 Makefile

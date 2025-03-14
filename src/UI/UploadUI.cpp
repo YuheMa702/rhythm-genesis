@@ -3,6 +3,9 @@
 #include <spdlog/spdlog.h>
 #include <thread>
 #include <chrono>
+#include <filesystem>
+#include <fstream>
+#include "../Bridge/PythonBridge.hpp"  // Ensure this header is available in your project
 
 UploadUI::UploadUI(sf::RenderWindow* window, const std::string& selectedFile)
     : window(window), selectedFile(selectedFile), exitRequested(false), newSong("") {
@@ -30,11 +33,23 @@ UploadUI::UploadUI(sf::RenderWindow* window, const std::string& selectedFile)
     UILabel* songNameLabel = new UILabel("Song Name:", screenWidth * 0.1f, screenHeight * 0.4f, fileFontSize);
     uiManager.addElement(songNameLabel);
 
-    // Save Button – triggers simulated beat map generation progress.
+    // Save Button – triggers beat map generation via Python and saves the result.
     int buttonFontSize = static_cast<int>(screenHeight * 0.04f);
-    saveButton = new UIButton("Save", screenWidth * 0.1f, screenHeight * 0.6f, screenWidth * 0.15f, screenHeight * 0.07f,
-                              buttonFontSize, [this]() {
+    saveButton = new UIButton("Save", screenWidth * 0.1f, screenHeight * 0.6f,
+                              screenWidth * 0.15f, screenHeight * 0.07f, buttonFontSize,
+                              [this]() {
         spdlog::info("Save button clicked");
+
+        // Initialize the Python interpreter.
+        if (!PythonBridge::initialize("../src/Python/")) {
+            spdlog::error("Python initialization failed!");
+            return;
+        }
+
+        // Call the Python function to parse the beatmap file.
+        std::string beatmapJSON = PythonBridge::parseBeatmapFile(this->selectedFile);
+        spdlog::info("Beatmap JSON: {}", beatmapJSON);
+
         // Simulate beat map generation progress (blocking simulation).
         for (int i = 0; i <= 100; i++) {
             progressBar->setProgress(i / 100.0f);
@@ -43,13 +58,32 @@ UploadUI::UploadUI(sf::RenderWindow* window, const std::string& selectedFile)
             this->window->display();
             std::this_thread::sleep_for(std::chrono::milliseconds(30));
         }
+
+        // Extract the base filename (without extension) from selectedFile.
+        std::filesystem::path musicPath(this->selectedFile);
+        std::string filename = musicPath.stem().string();
+        std::string outputPath = "../assets/beatmaps/" + filename + ".json";
+
+        // Save the beatmap JSON to the output file.
+        std::ofstream outFile(outputPath);
+        if (outFile) {
+            outFile << beatmapJSON;
+            outFile.close();
+            spdlog::info("Beatmap saved to {}", outputPath);
+        } else {
+            spdlog::error("Failed to save beatmap to {}", outputPath);
+        }
+
+        PythonBridge::finalize();
+
         // Show confirmation message after processing.
         confirmationLabel->setVisible(true);
     });
 
     // Back Button – exits the Upload UI and saves the entered song name.
-    backButton = new UIButton("Back", screenWidth * 0.3f, screenHeight * 0.6f, screenWidth * 0.15f, screenHeight * 0.07f,
-                              buttonFontSize, [this]() {
+    backButton = new UIButton("Back", screenWidth * 0.3f, screenHeight * 0.6f,
+                              screenWidth * 0.15f, screenHeight * 0.07f, buttonFontSize,
+                              [this]() {
         spdlog::info("Back button clicked");
         newSong = songNameBox->getText();  // Retrieve song name input.
         exitRequested = true;
