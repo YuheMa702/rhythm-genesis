@@ -1,16 +1,22 @@
+// src/UI/UILabel.hpp
 #ifndef UI_LABEL_H
 #define UI_LABEL_H
 
 #include "UIElement.hpp"
+#include <SFML/Graphics.hpp>
+#include <spdlog/spdlog.h>
+#include <string>
 
 class UILabel : public UIElement {
-   private:
+private:
     sf::Text text;
     sf::Font font;
     int fontSize;
+    sf::Color normalColor = sf::Color::White;
+    sf::Color hoverColor = sf::Color::Yellow;
 
-   public:
-    UILabel(const std::string& label, float x, float y, int fontSize) {
+public:
+    UILabel(const std::string& label, float x, float y, int fontSize) : fontSize(fontSize) {
         position = {x, y};
 
         // Load font
@@ -21,8 +27,32 @@ class UILabel : public UIElement {
         text.setFont(font);
         text.setString(label);
         text.setCharacterSize(fontSize);
-        text.setFillColor(sf::Color::White);
+        text.setFillColor(normalColor);
         text.setPosition(position);
+    }
+
+    // Override setPosition to update the text position
+    virtual void setPosition(float x, float y) override {
+        UIElement::setPosition(x, y);
+        text.setPosition(x, y);
+    }
+
+    // Handle mouse events: change color on hover and log clicks.
+    virtual void handleEvent(const sf::Event& event) override {
+        if (event.type == sf::Event::MouseMoved) {
+            sf::Vector2f mousePos(static_cast<float>(event.mouseMove.x), static_cast<float>(event.mouseMove.y));
+            if (text.getGlobalBounds().contains(mousePos)) {
+                text.setFillColor(hoverColor);
+            } else {
+                text.setFillColor(normalColor);
+            }
+        }
+        if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
+            sf::Vector2f mousePos(static_cast<float>(event.mouseButton.x), static_cast<float>(event.mouseButton.y));
+            if (text.getGlobalBounds().contains(mousePos)) {
+                spdlog::info("{} was clicked!", text.getString().toAnsiString());
+            }
+        }
     }
 
     void draw(sf::RenderWindow& window) override {
@@ -30,6 +60,8 @@ class UILabel : public UIElement {
             window.draw(text);
         }
     }
+    
+    sf::Vector2f getPosition() const { return position; }
 };
 
 #endif

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 project(IrisEngine)
 
-# Force using Clang++ cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ .. && make -j$(nproc)
+# Force using Clang++
 set(CMAKE_C_COMPILER clang)
 set(CMAKE_CXX_COMPILER clang++)
 
@@ -15,10 +15,20 @@ find_package(SFML 2.5 COMPONENTS graphics window system REQUIRED)
 # Find spdlog
 find_package(spdlog REQUIRED)
 
+# Find Python3
+find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
+include_directories(${Python3_INCLUDE_DIRS})
+
+# Add tinyfiledialogs library (assumes tinyfiledialogs is in external/tinyfiledialogs)
+add_library(tinyfiledialogs external/tinyfiledialogs/tinyfiledialogs.c)
+target_include_directories(tinyfiledialogs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/external/tinyfiledialogs)
+
+
 # Add source files
-file(GLOB_RECURSE SOURCES src/*.cpp)
+file(GLOB_RECURSE SOURCES src/*.cpp 
+     src/UI/MainMenu.cpp
+     src/UI/UploadUI.cpp)
 add_executable(IrisEngine ${SOURCES})
 
-# Link SFML and spdlog
-target_link_libraries(IrisEngine sfml-graphics sfml-window sfml-system spdlog::spdlog)
-
+# Link SFML, spdlog, and pybind11 (embed module for embedding Python)
+target_link_libraries(IrisEngine sfml-graphics sfml-window sfml-system sfml-audio spdlog::spdlog ${Python3_LIBRARIES} tinyfiledialogs)
