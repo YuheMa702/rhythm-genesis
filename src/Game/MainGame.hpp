@@ -6,6 +6,11 @@
 #include <vector>
 #include <string>
 
+struct FallingShape {
+    sf::RectangleShape shape;
+    float spawnTime;
+};
+
 class MainGame {
 private:
     UIManager uiManager;
@@ -14,18 +19,36 @@ private:
     sf::RectangleShape line;
     sf::FloatRect boundingBoxBlock;
     sf::FloatRect boundingBoxLine;
-    float screenWidth;
-    float screenHeight;
+
+    float screenWidth, screenHeight;
     bool shapeAlive;
     float timeToLine;
     float speed;
     float distance;
     float start;
+    float spawnInterval;
+    float lastSpawnTime;
+
+    std::vector<FallingShape> fallingShapes;
     sf::Clock clock;
+    sf::Texture texture;
+    sf::Sprite sprite;
+
+    int timeStamp;
+    bool spawnedShape;
+
+    int score = 0;
+    std::vector<std::string> scoreBreakdown;
+    sf::Font font; 
+    sf::Text scoreText;
+    bool gameOver = false;
 
 public:
     MainGame(sf::RenderWindow* window);
-    void run();
+    void run(const std::string& filePath);
+    void spawnShape(int col);
+    bool parseGame(const std::string& filePath, float time);
+    void displayScore();
 };
 
 #endif

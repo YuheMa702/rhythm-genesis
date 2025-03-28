@@ -47,7 +47,7 @@ int main() {
 
     MainMenu mainMenu(&window);
     MainGame mainGame(&window);
-    mainGame.run();
+    mainGame.run("../src/Game/gameTest.json");
     // mainMenu.run();
 
     return 0;
