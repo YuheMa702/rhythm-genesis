@@ -38,6 +38,10 @@ class UIButton : public UIElement {
         text.setPosition(x + 10, y + 5);
     }
 
+    void setText(const std::string& label) {
+        text.setString(label);
+    }
+
     void draw(sf::RenderWindow& window) override {
         if (visible) {
             window.draw(shape);
