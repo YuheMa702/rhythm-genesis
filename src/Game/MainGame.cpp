@@ -5,7 +5,6 @@
 #include <random>
 #include <fstream>
 #include <nlohmann/json.hpp>
-
 using json = nlohmann::json;
 
 MainGame::MainGame(sf::RenderWindow* window) : window(window) {
@@ -14,7 +13,9 @@ MainGame::MainGame(sf::RenderWindow* window) : window(window) {
     screenHeight = static_cast<float>(winSize.y);
     float colWidth = screenWidth / 5;
 
-    line = sf::RectangleShape({screenWidth, 10.f});
+    font.loadFromFile("../assets/fonts/golem-script.ttf");
+
+    line = sf::RectangleShape({screenWidth, 5.f});
     line.setFillColor(sf::Color::White);
     line.setPosition({0, 500.f});
     
@@ -35,21 +36,6 @@ MainGame::MainGame(sf::RenderWindow* window) : window(window) {
     timeStamp = 0;
 }
 
-void MainGame::spawnShape(int col) {
-    sf::RectangleShape newShape({screenWidth / 5, 50.f});
-    newShape.setFillColor(sf::Color::Green);
-    
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_int_distribution<int> distColor(0, 255);
-    // std::uniform_int_distribution<int> distX(0, 4);
-    float newX = col * (screenWidth / 5);
-
-    newShape.setFillColor(sf::Color(distColor(gen), distColor(gen), distColor(gen)));
-    newShape.setPosition({newX, -50.f});
-    fallingShapes.push_back({newShape, clock.getElapsedTime().asSeconds()});
-}
-
 bool MainGame::parseGame(const std::string& filePath, float time){
     static std::vector<bool> spawnedNotes;
     static json gameData;
@@ -66,7 +52,7 @@ bool MainGame::parseGame(const std::string& filePath, float time){
         loaded = true;
     }
     
-    for (size_t i = 0; i < gameData.size(); ++i) {
+    for (size_t i = 0; i < gameData.size(); i++) {
         if (!spawnedNotes[i] && time >= gameData[i]["time"].get<float>()) {
             for (int lane : gameData[i]["lanes"]) {
                 spawnShape(lane);
@@ -79,10 +65,31 @@ bool MainGame::parseGame(const std::string& filePath, float time){
     return false;
 }   
 
+void MainGame::spawnShape(int col) {
+    sf::RectangleShape newShape({screenWidth / 5, 50.f});
+    newShape.setFillColor(sf::Color::Green);
+    
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<int> distColor(0, 255);
+    // std::uniform_int_distribution<int> distX(0, 4);
+    float newX = col * (screenWidth / 5);
+
+    newShape.setFillColor(sf::Color(distColor(gen), distColor(gen), distColor(gen)));
+    newShape.setPosition({newX, -50.f});
+
+    keyLabelHolder.setFont(font);
+    keyLabelHolder.setString(std::string(1, keys[col]));
+    keyLabelHolder.setCharacterSize(24);
+    keyLabelHolder.setFillColor(sf::Color::White);
+    keyLabelHolder.setPosition(newX + (screenWidth / 10) - 10, -40.f);
+
+    fallingShapes.push_back({newShape, keyLabelHolder, clock.getElapsedTime().asSeconds()});
+}
+
 void MainGame::displayScore() {
-    font.loadFromFile("../assets/fonts/golem-script.ttf");
     float startX = 50.f;
-    float boxWidth = (screenWidth - 100.f) / scoreBreakdown.size();
+    float boxWidth = ((screenWidth - 100.f) / scoreBreakdown.size()) - 5.f;
     float boxHeight = 20.f;
     window->clear(sf::Color::Black);
 
@@ -98,6 +105,17 @@ void MainGame::displayScore() {
         hitBox.setPosition(startX, 50.f);
         window->draw(hitBox);
         startX += boxWidth + 5.f;
+    }
+
+    startX = 50.f;
+    boxWidth = (screenWidth - 100.f) / totalScoreGraph.size();
+    for (const auto& tot : totalScoreGraph) {
+        boxHeight = tot;
+        sf::RectangleShape totBox(sf::Vector2f(boxWidth, boxHeight));
+        totBox.setFillColor(sf::Color::Green);
+        totBox.setPosition(startX, 200.f - boxHeight);
+        window->draw(totBox);
+        startX += boxWidth;
     }
 
     scoreText.setFont(font);
@@ -124,6 +142,11 @@ void MainGame::run(const std::string& filePath) {
         window->clear(sf::Color::Black);
 
         float currentTime = clock.getElapsedTime().asSeconds();
+        scoreTimer += currentTime;
+        if (scoreTimer >= 0.5f && score > 0){
+            scoreTimer = 0.f;
+            totalScoreGraph.push_back((float)score);
+        }
         spawnedShape = parseGame(filePath, currentTime);
 
         for (auto it = fallingShapes.begin(); it != fallingShapes.end();) {
@@ -132,6 +155,8 @@ void MainGame::run(const std::string& filePath) {
             float speed = distance / timeToLine;
             
             it->shape.setPosition(it->shape.getPosition().x, -50.f + speed * elapsedTime);
+            it->keyLabel.setPosition(it->keyLabel.getPosition().x, -40.f + speed * elapsedTime);
+
             
             if (it->shape.getPosition().y > screenHeight) {
                 it = fallingShapes.erase(it);
@@ -149,7 +174,6 @@ void MainGame::run(const std::string& filePath) {
                     float lineY = line.getPosition().y + (5.f);
                     float blockCenter = posY + (it->shape.getSize().y / 2);
                     float diff = blockCenter - lineY;
-                    spdlog::info(diff);
                     if(diff < 5.f && diff > -5.f){
                         spdlog::info("excellent");
                         score += 10;
@@ -166,7 +190,8 @@ void MainGame::run(const std::string& filePath) {
                     it = fallingShapes.erase(it);
                 } else {
                     window->draw(it->shape);
-                    ++it;
+                    window->draw(it->keyLabel);
+                    it++;
                 }
             }
         }
@@ -181,3 +206,4 @@ void MainGame::run(const std::string& filePath) {
         window->display();
     }
 }
+

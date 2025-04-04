@@ -8,6 +8,7 @@
 
 struct FallingShape {
     sf::RectangleShape shape;
+    sf::Text keyLabel;
     float spawnTime;
 };
 
@@ -36,12 +37,17 @@ private:
 
     int timeStamp;
     bool spawnedShape;
+    sf::Text keyLabelHolder;
+    std::vector<char> keys = {'R', 'T', 'Y', 'U', 'I'};
+    std::vector<bool> pressed = {false, false, false, false, false};
 
     int score = 0;
     std::vector<std::string> scoreBreakdown;
     sf::Font font; 
     sf::Text scoreText;
     bool gameOver = false;
+    std::vector<float> totalScoreGraph;
+    float scoreTimer;
 
 public:
     MainGame(sf::RenderWindow* window);
