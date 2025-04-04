@@ -5,6 +5,7 @@
 #include <SFML/Graphics.hpp>
 
 #include "../src/UI/MainMenu.hpp"
+#include "../src/Game/MainGame.hpp"
 
 #include "Bridge/PythonBridge.hpp"
 
@@ -45,7 +46,9 @@ int main() {
     spdlog::info("Detected screen size: {}x{}", screenWidth, screenHeight);
 
     MainMenu mainMenu(&window);
-    mainMenu.run();
+    MainGame mainGame(&window);
+    mainGame.run("../src/Game/gameTest.json");
+    // mainMenu.run();
 
     return 0;
 }
