@@ -127,7 +127,7 @@ void MainGame::displayScore() {
     window->draw(scoreText);
 
     window->display();
-    sf::sleep(sf::seconds(5));
+    // sf::sleep(sf::seconds(5));
 }
 
 void MainGame::run(const std::string& filePath) {
@@ -136,6 +136,26 @@ void MainGame::run(const std::string& filePath) {
         while (window->pollEvent(event)) {
             if (event.type == sf::Event::Closed)
                 window->close();
+            // switch (event.type) {
+            //     case sf::Event::KeyPressed:
+            //         if (event.key.code == sf::Keyboard::R)
+            //             spdlog::info("r");
+            //         else if (event.key.code == sf::Keyboard::T)
+            //             spdlog::info("t");
+            //         else if (event.key.code == sf::Keyboard::Y)
+            //             spdlog::info("y");
+            //         break;
+            //     case sf::Event::KeyReleased:
+            //         if (event.key.code == sf::Keyboard::R)
+            //             spdlog::info("~r");
+            //         else if (event.key.code == sf::Keyboard::T)
+            //             spdlog::info("~t");
+            //         else if (event.key.code == sf::Keyboard::Y)
+            //             spdlog::info("~y");
+            //         break;
+            //     default:
+            //         break;
+            }
             uiManager.handleEvent(event);
         }
         
