@@ -27,6 +27,9 @@ public:
     MainMenu(sf::RenderWindow* window);
     ~MainMenu();
     void run();
+    bool menuRunning = true;
+    std::string jsonPath;
+    std::string songPath;
 };
 
 #endif

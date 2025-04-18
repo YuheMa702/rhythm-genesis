@@ -3,6 +3,7 @@
 #include "UploadUI.hpp"
 #include <spdlog/spdlog.h>
 #include "tinyfiledialogs.h" // make sure tinyfiledialogs is available
+#include "UILabel.hpp"
 
 MainMenu::MainMenu(sf::RenderWindow* window) : window(window) {
     // Get current window dimensions
@@ -114,6 +115,26 @@ void MainMenu::run() {
             if (event.type == sf::Event::Closed)
                 window->close();
             uiManager.handleEvent(event);
+            if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
+                sf::Vector2f mousePos(static_cast<float>(event.mouseButton.x), static_cast<float>(event.mouseButton.y));
+                //detect song being selected from main menu
+                for (auto& label : songList->getLabels()) {
+                    if (label->getGlobalBounds().contains(mousePos)) {
+                        std::string clickedSong = label->getText();
+                        spdlog::info("Song: {}", clickedSong);
+                        //hard code selections for now, update this later
+                        if(clickedSong == "Song 1"){
+                            jsonPath = "../src/Game/gameTest.json";
+                            songPath = "../assets/music/retro-game-arcade-short.ogg";
+                        }else if(clickedSong == "Song 2"){
+                            jsonPath = "../src/Game/clair-de-lune.json";
+                            songPath = "../assets/music/Clair-de-Lune.ogg";
+                        }
+                        menuRunning = false;
+                        return;
+                    }
+                }
+            }
         }
         window->clear(sf::Color::Black);
         uiManager.draw(*window);

@@ -34,6 +34,8 @@ int main() {
 
     // Initialize logging
 
+    //"../assets/music/retro-game-arcade-short.ogg"
+
     spdlog::info("Starting Rhythm Genesis Main Menu...");
 
     sf::VideoMode desktop = sf::VideoMode::getDesktopMode();
@@ -47,8 +49,17 @@ int main() {
 
     MainMenu mainMenu(&window);
     MainGame mainGame(&window);
-    mainGame.run("../src/Game/gameTest.json");
-    // mainMenu.run();
-
+    while (window.isOpen()){
+        if(mainMenu.menuRunning){
+            mainMenu.run();
+        }
+        else{
+            mainGame.gameOver = false;
+            mainGame.loaded = false;
+            mainGame.clock.restart();
+            mainGame.run(mainMenu.jsonPath, mainMenu.songPath);
+            mainMenu.menuRunning = true;
+        }
+    }
     return 0;
 }

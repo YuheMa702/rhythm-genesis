@@ -5,11 +5,14 @@
 #include "../UI/UIManager.hpp"
 #include <vector>
 #include <string>
+#include <SFML/Audio.hpp>
 
 struct FallingShape {
     sf::RectangleShape shape;
     sf::Text keyLabel;
     float spawnTime;
+    bool fading = false;
+    float fadeTimer = 0.f;
 };
 
 class MainGame {
@@ -18,6 +21,8 @@ private:
     sf::RenderWindow* window;
     sf::RectangleShape shape;
     sf::RectangleShape line;
+    sf::RectangleShape line1;
+    sf::RectangleShape line2;
     sf::FloatRect boundingBoxBlock;
     sf::FloatRect boundingBoxLine;
 
@@ -31,8 +36,6 @@ private:
     float lastSpawnTime;
 
     std::vector<FallingShape> fallingShapes;
-    sf::Clock clock;
-    sf::Texture texture;
     sf::Sprite sprite;
 
     int timeStamp;
@@ -45,16 +48,27 @@ private:
     std::vector<std::string> scoreBreakdown;
     sf::Font font; 
     sf::Text scoreText;
-    bool gameOver = false;
     std::vector<float> totalScoreGraph;
     float scoreTimer;
 
+    sf::Music backgroundMusic;
+
+    float firstBlockTime = 500.f; 
+
+    const float TOP_LINE = 475.f;
+    const float TIME_TO_LINE = 3.f;
+
 public:
     MainGame(sf::RenderWindow* window);
-    void run(const std::string& filePath);
+    void run(const std::string& filePath, const std::string& musicPath);
     void spawnShape(int col);
     bool parseGame(const std::string& filePath, float time);
     void displayScore();
+    void playMusic(const std::string& musicPath);
+    bool menuRunning;
+    bool gameOver = false;
+    bool loaded = false;
+    sf::Clock clock;
 };
 
 #endif
