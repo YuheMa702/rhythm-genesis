@@ -46,10 +46,7 @@ int main() {
     spdlog::info("Detected screen size: {}x{}", screenWidth, screenHeight);
 
     MainMenu mainMenu(&window);
-    MainGame mainGame(&window);
-    mainGame.run("../src/Game/gameTest.json");
-    // mainMenu.run();
-
+    mainMenu.run();
     return 0;
 }
 
@@ -72,7 +69,7 @@ int main() {
 
 //     // Load the beep sound buffer
 //     sf::SoundBuffer beepBuffer;
-//     if (!beepBuffer.loadFromFile("../assets/music/beep.wav"))   // Just download some beap.wav to the assets/music folder
+//     if (!beepBuffer.loadFromFile("../assets/music/metronome-click.wav"))   // Just download some beap.wav to the assets/music folder
 //     {
 //         std::cerr << "Error loading beep sound!" << std::endl;
 //         return -1;
