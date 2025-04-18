@@ -2,57 +2,76 @@
 import json
 import librosa
 import os
-def parse_audio_file(file_path):
-    # Example: use librosa to process the file (e.g., for beat detection) 
-    # and return a JSON string for the beatmap.
-    # For now return a static JSON for debugging purpose
-    # beatmap = {
-    #     "song": "example_song",
-    #     "bpm": 60,
-    #     "notes": [
-    #         {"time": 1, "count": 2},
-    #         {"time": 2, "count": 1},
-    #         {"time": 3, "count": 2},
-    #         {"time": 4, "count": 1},
-    #         {"time": 5, "count": 2},
-    #         {"time": 6, "count": 1},
-    #         {"time": 7, "count": 2},
-    #         {"time": 8, "count": 1},
-    #         {"time": 9, "count": 2},
-    #         {"time": 10, "count": 1},
-    #         {"time": 11, "count": 2},
-    #         {"time": 12, "count": 1},
-    #         {"time": 13, "count": 2},
-    #         {"time": 14, "count": 1},
-    #         {"time": 15, "count": 2},
-    #         {"time": 16, "count": 3},
-    #         {"time": 17, "count": 1},
-    #     ]
-    # }
-    # return json.dumps(beatmap)
+import numpy as np
+from random import choice
 
+def parse_audio_file(file_path):
     try:
-        # Load the audio file
-        y, sr = librosa.load(file_path, sr=None)
-        
-        # Extract tempo (bpm) and beat frame indices
-        tempo, beat_frames = librosa.beat.beat_track(y=y, sr=sr)
-        
-        # Convert beat frames to time in seconds and cast to a list
-        beat_times = librosa.frames_to_time(beat_frames, sr=sr).tolist()
-        
-        # Use the base name of the file as the song name
-        song_name = os.path.basename(file_path)
-        
-        # Construct the beatmap dictionary with default intensity 1 for all beats.
-        # Explicitly cast values to native float before rounding.
-        beatmap = {
-            "song": song_name,
-            "bpm": round(float(tempo), 2),
-            "notes": [{"time": round(float(t), 3), "intensity": 1} for t in beat_times]
-        }
-        
+        beatmap = process_song(file_path, 5, verbose=False)
         return json.dumps(beatmap)
     except Exception as e:
         # In case of error, return a JSON error message.
         return json.dumps({"error": str(e)})
+
+def process_song(filename, num_lanes, verbose=False):
+    # Load the audio as a waveform `y` and store the sampling rate as `sr`
+    y, sr = librosa.load(filename)
+    # Run the default beat tracker
+    tempo, beat_frames = librosa.beat.beat_track(y=y, sr=sr)
+
+    # Determine the onset strength of the beats
+    onset_env = librosa.onset.onset_strength(y=y, sr=sr)
+
+    threshold_strength = np.mean(onset_env) + 0.5 * np.std(onset_env)
+
+    # Get a list of frames where the onset strenght is greater than threshold
+    note_frames = np.where(onset_env > threshold_strength)[0]
+    note_times = librosa.frames_to_time(note_frames, sr=sr)
+    note_strengths = onset_env[note_frames]
+
+    # Calculate the average beat strength
+    beat_strengths = onset_env[beat_frames]
+
+    if (verbose):
+        print(list(map('Estimated tempo: {:.2f} beats per minute'.format,tempo)))
+    
+    # Generate the beatmap
+    print("Generating beatmap...")
+    beatmap = build_beatmap(note_times, note_strengths, num_lanes)
+    return beatmap
+
+# Create a beatmap, which is a list of beatstamps
+def build_beatmap(beat_times, beat_strengths, num_lanes):
+    beatmap = []
+    for i in range(beat_strengths.size):
+        num_notes = choice([n for n in range(1, num_lanes + 1)])
+        beatstamp = create_json(beat_times[i].item(), num_notes, num_lanes)  # single note
+        beatmap.append(beatstamp)
+    return beatmap
+
+# Create a beatstamp, a tuple of the timestamp and the number of notes
+def create_json(beat_time, num_notes, num_lanes):
+    lanes = pick_lanes(num_notes, num_lanes)
+    beatstamp = {
+        "time": beat_time,
+        "num_notes": num_notes,
+        "lanes": lanes
+    }
+    return beatstamp
+
+def pick_lanes(num_notes, num_lanes):
+    lanes = []
+    for notes in range(num_notes):
+        lane = choice([i for i in range(0, num_lanes) if i not in lanes])
+        lanes.append(lane)
+    return lanes
+
+def clean_rhythm(note_times, tempo):
+    minimum_note_length = 0.05
+    cleaned_times = []
+    last_time = None
+    for time in note_times:
+        if last_time is None or time - last_time > minimum_note_length:
+            cleaned_times.append(time)
+            last_time = time
+    return cleaned_times
