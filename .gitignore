@@ -16,6 +16,9 @@ cmake_install.cmake
 *.so
 *.dll
 
+# Ignore external
+/external/
+
 # Ignore IDE/Editor-specific files
 .vscode/
 .idea/
