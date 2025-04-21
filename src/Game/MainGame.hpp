@@ -6,6 +6,8 @@
 #include <vector>
 #include <string>
 #include <SFML/Audio.hpp>
+#include <nlohmann/json.hpp>
+using json = nlohmann::json;
 
 struct FallingShape {
     sf::RectangleShape shape;
@@ -47,6 +49,7 @@ private:
     int score = 0;
     std::vector<std::string> scoreBreakdown;
     sf::Font font; 
+    sf::Font font1; 
     sf::Text scoreText;
     std::vector<float> totalScoreGraph;
     float scoreTimer;
@@ -57,6 +60,14 @@ private:
 
     const float TOP_LINE = 475.f;
     const float TIME_TO_LINE = 3.f;
+
+    float lastRowTime = -1.0f;
+    const float rowCooldown = 1.f;
+    const size_t maxNotesPerRow = 2;
+    const size_t maxOnScreenNotes = 10;
+
+    json gameData;
+    std::vector<bool> spawnedNotes;
 
 public:
     MainGame(sf::RenderWindow* window);
@@ -69,6 +80,7 @@ public:
     bool gameOver = false;
     bool loaded = false;
     sf::Clock clock;
+    void reset();
 };
 
 #endif

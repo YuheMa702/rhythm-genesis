@@ -54,9 +54,7 @@ int main() {
             mainMenu.run();
         }
         else{
-            mainGame.gameOver = false;
-            mainGame.loaded = false;
-            mainGame.clock.restart();
+            mainGame.reset();
             mainGame.run(mainMenu.jsonPath, mainMenu.songPath);
             mainMenu.menuRunning = true;
         }
