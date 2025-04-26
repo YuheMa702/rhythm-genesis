@@ -43,10 +43,15 @@ def process_song(filename, num_lanes, verbose=False):
 # Create a beatmap, which is a list of beatstamps
 def build_beatmap(beat_times, beat_strengths, num_lanes):
     beatmap = []
+    minimum_note_length = 0.1
+    last_time = None
     for i in range(beat_strengths.size):
-        num_notes = choice([n for n in range(1, num_lanes + 1)])
-        beatstamp = create_json(beat_times[i].item(), num_notes, num_lanes)  # single note
-        beatmap.append(beatstamp)
+        time = beat_times[i].item()
+        if last_time is None or time - last_time > minimum_note_length:
+            num_notes = choice([n for n in range(1, 3)])
+            beatstamp = create_json(time, num_notes, num_lanes)
+            beatmap.append(beatstamp)
+            last_time = time
     return beatmap
 
 # Create a beatstamp, a tuple of the timestamp and the number of notes
@@ -65,13 +70,3 @@ def pick_lanes(num_notes, num_lanes):
         lane = choice([i for i in range(0, num_lanes) if i not in lanes])
         lanes.append(lane)
     return lanes
-
-def clean_rhythm(note_times, tempo):
-    minimum_note_length = 0.05
-    cleaned_times = []
-    last_time = None
-    for time in note_times:
-        if last_time is None or time - last_time > minimum_note_length:
-            cleaned_times.append(time)
-            last_time = time
-    return cleaned_times
