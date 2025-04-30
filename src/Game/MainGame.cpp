@@ -14,7 +14,7 @@ MainGame::MainGame(sf::RenderWindow* window) : window(window) {
     float colWidth = screenWidth / 5;
 
     font.loadFromFile("../assets/fonts/golem-script.ttf");
-    font1.loadFromFile("../../../../Windows/Fonts/arial.ttf"); //add font to proj folder
+    font1.loadFromFile("../assets/fonts/arial.ttf"); //add font to proj folder
 
     line = sf::RectangleShape({screenWidth, 5.f});
     line.setFillColor(sf::Color::Black);
@@ -29,6 +29,14 @@ MainGame::MainGame(sf::RenderWindow* window) : window(window) {
     line2.setFillColor(sf::Color::White);
     line2.setPosition({0, TOP_LINE});
     
+    pauseText.setFont(font);
+    pauseText.setString("PAUSED\nPress ESC to Resume");
+    pauseText.setCharacterSize(40);
+    pauseText.setFillColor(sf::Color::White);
+    pauseText.setPosition(screenWidth / 2.f - 150.f, screenHeight / 2.f - 50.f);
+
+    laneWidth = screenWidth / 5.f;
+
     timeToLine = TIME_TO_LINE;
     //dont think i need these anymore?
     spawnInterval = 1.0f;
@@ -56,29 +64,23 @@ bool MainGame::parseGame(const std::string& filePath, float time) {
         spawnedNotes.resize(gameData.size(), false);
         loaded = true;
         firstBlockTime = gameData[0]["time"].get<float>();
+        sf::sleep(sf::seconds(2));
+        clock.restart();
     }
 
     for (size_t i = 0; i < gameData.size(); ++i) {
         if (!spawnedNotes[i] && time >= gameData[i]["time"].get<float>()) {
-            if(gameData[i]["num_notes"].get<int>() > 3 || filePath == "../src/Game/gameTest.json"){ //fix this
-                if (lastRowTime < 0 || (time - lastRowTime >= rowCooldown)) {
-                    if (fallingShapes.size() >= maxOnScreenNotes) {
-                        return false;
-                    }
 
-                    size_t notesSpawned = 0;
-                    for (int lane : gameData[i]["lanes"]) {
-                        if (notesSpawned >= maxNotesPerRow) break;
-                        spawnShape(lane);
-                        notesSpawned++;
-                    }
-
-                    spawnedNotes[i] = true;
-                    lastRowTime = time;
-                    gameOver = true;
-                    return true;
-                }
+            size_t notesSpawned = 0;
+            for (int lane : gameData[i]["lanes"]) {
+                spawnShape(lane);
+                notesSpawned++;
             }
+
+            spawnedNotes[i] = true;
+            lastRowTime = time;
+            gameOver = true;
+            return true;
         }
     }
 
@@ -92,10 +94,10 @@ void MainGame::spawnShape(int col) {
     
     std::random_device rd;
     std::mt19937 gen(rd());
-    std::uniform_int_distribution<int> distColor(0, 255);
+    std::uniform_int_distribution<int> distColor(0, 10);
     float newX = col * (screenWidth / 5);
 
-    newShape.setFillColor(sf::Color(distColor(gen), distColor(gen), distColor(gen)));
+    newShape.setFillColor(tileColors[distColor(gen)]);
     newShape.setPosition({newX, -50.f});
 
     keyLabelHolder.setFont(font);
@@ -243,19 +245,39 @@ void MainGame::reset() {
 //any bugs
 void MainGame::run(const std::string& filePath, const std::string& musicPath) {
     while (window->isOpen()) {
-        if (timeToLine - firstBlockTime >= clock.getElapsedTime().asSeconds()){
+        //add some sort of start delay variable
+        if (timeToLine - firstBlockTime - .1f >= clock.getElapsedTime().asSeconds()){
             playMusic(musicPath);
         }
         sf::Event event;
         while (window->pollEvent(event)) {
             if (event.type == sf::Event::Closed)
                 window->close();
+            if (event.type == sf::Event::KeyPressed) {
+                if (event.key.code == sf::Keyboard::Escape) {
+                    isPaused = !isPaused;
+                    if (isPaused) {
+                        backgroundMusic.pause();
+                        pauseStartTime = clock.getElapsedTime().asSeconds();
+                    } else {
+                        backgroundMusic.play();
+                        totalPausedTime += clock.getElapsedTime().asSeconds() - pauseStartTime;
+                    }
+                }
+            }
             uiManager.handleEvent(event);
         }
         
         window->clear(sf::Color::Black);
 
-        float currentTime = clock.getElapsedTime().asSeconds();
+        if (isPaused) {
+            window->clear(sf::Color::Black);
+            window->draw(pauseText);
+            window->display();
+            continue;
+        }
+
+        float currentTime = clock.getElapsedTime().asSeconds() - totalPausedTime;
 
         //track score for displays at the end
         scoreTimer += currentTime;
@@ -312,11 +334,9 @@ void MainGame::run(const std::string& filePath, const std::string& musicPath) {
                 float pos = it->shape.getPosition().x;
                 
                 //handle score tracking and deleting of blocks on key presses
-                if (boundingBoxBlock.intersects(boundingBoxLine) && (((pos) < 100) & ((pos) > -100) & sf::Keyboard::isKeyPressed(sf::Keyboard::Key::R)
-                |((pos) < 200) & ((pos) > 100) & sf::Keyboard::isKeyPressed(sf::Keyboard::Key::T)
-                |((pos) < 400) & ((pos) > 300) & sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Y)
-                |((pos) < 500) & ((pos) > 400) & sf::Keyboard::isKeyPressed(sf::Keyboard::Key::U)
-                |((pos) < 700) & ((pos) > 600) & sf::Keyboard::isKeyPressed(sf::Keyboard::Key::I))) {
+                int laneIndex = static_cast<int>(it->shape.getPosition().x / laneWidth);
+                sf::Keyboard::Key expectedKey = keyBindings[laneIndex];
+                if (boundingBoxBlock.intersects(boundingBoxLine) && sf::Keyboard::isKeyPressed(expectedKey)) {
                     float posY = it->shape.getPosition().y;
                     float lineY = line.getPosition().y + (5.f);
                     float blockCenter = posY + (it->shape.getSize().y / 2);

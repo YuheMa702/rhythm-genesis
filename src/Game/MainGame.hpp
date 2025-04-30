@@ -46,6 +46,14 @@ private:
     std::vector<char> keys = {'R', 'T', 'Y', 'U', 'I'};
     std::vector<bool> pressed = {false, false, false, false, false};
 
+    std::vector<sf::Keyboard::Key> keyBindings = {
+        sf::Keyboard::R,
+        sf::Keyboard::T,
+        sf::Keyboard::Y,
+        sf::Keyboard::U,
+        sf::Keyboard::I
+    };
+
     int score = 0;
     std::vector<std::string> scoreBreakdown;
     sf::Font font; 
@@ -68,6 +76,27 @@ private:
 
     json gameData;
     std::vector<bool> spawnedNotes;
+
+    bool isPaused = false;
+    sf::Text pauseText;
+
+    float pauseStartTime = 0.f;
+    float totalPausedTime = 0.f;
+
+    float laneWidth;
+
+    std::vector<sf::Color> tileColors = {
+        sf::Color(249, 65, 68),
+        sf::Color(243, 114, 44),
+        sf::Color(248, 150, 30),
+        sf::Color(249, 132, 74),
+        sf::Color(249, 199, 79),
+        sf::Color(144, 190, 109),
+        sf::Color(67, 170, 139),
+        sf::Color(77, 144, 142),
+        sf::Color(87, 117, 144),
+        sf::Color(39, 125, 161)
+    };
 
 public:
     MainGame(sf::RenderWindow* window);

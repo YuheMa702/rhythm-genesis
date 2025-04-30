@@ -124,10 +124,16 @@ void MainMenu::run() {
                         spdlog::info("Song: {}", clickedSong);
                         //hard code selections for now, update this later
                         if(clickedSong == "Song 1"){
-                            jsonPath = "../src/Game/gameTest.json";
+                            jsonPath = "../src/Game/json/gameTest.json";
                             songPath = "../assets/music/retro-game-arcade-short.ogg";
                         }else if(clickedSong == "Song 2"){
-                            jsonPath = "../src/Game/clair-de-lune.json";
+                            jsonPath = "../src/Game/json/clair-de-lune.json";
+                            songPath = "../assets/music/Clair-de-Lune.ogg";
+                        }else if(clickedSong == "Song 3"){
+                            jsonPath = "../src/Game/json/clair-de-lune-chords.json";
+                            songPath = "../assets/music/Clair-de-Lune.ogg";
+                        }else if(clickedSong == "Song 4"){
+                            jsonPath = "../src/Game/json/clair-de-lune-single.json";
                             songPath = "../assets/music/Clair-de-Lune.ogg";
                         }
                         menuRunning = false;
