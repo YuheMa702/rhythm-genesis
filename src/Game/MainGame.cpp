@@ -218,12 +218,12 @@ void MainGame::run(const std::string& filePath) {
 
         if (fallingShapes.empty() && gameOver) {
             displayScore();
-            break;
+            //break;
         }
         
         window->draw(line);
         // window->draw(sprite);
         window->display();
     }
-}
+
 
