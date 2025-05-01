@@ -35,6 +35,12 @@ MainGame::MainGame(sf::RenderWindow* window) : window(window) {
     pauseText.setFillColor(sf::Color::White);
     pauseText.setPosition(screenWidth / 2.f - 150.f, screenHeight / 2.f - 50.f);
 
+    returnToMenuText.setFont(font);
+    returnToMenuText.setString("Return to Menu (M)");
+    returnToMenuText.setCharacterSize(30);
+    returnToMenuText.setFillColor(sf::Color::White);
+    returnToMenuText.setPosition(screenWidth / 2.f - returnToMenuText.getGlobalBounds().width / 2.f, screenHeight / 2.f + 50.f);
+
     laneWidth = screenWidth / 5.f;
 
     timeToLine = TIME_TO_LINE;
@@ -231,6 +237,8 @@ void MainGame::reset() {
     gameOver = false;
     loaded = false;
     spawnedShape = false;
+    totalPausedTime = 0;
+    isPaused = false;
 
     lastRowTime = -1.0f;
     firstBlockTime = 500.f;
@@ -264,6 +272,11 @@ void MainGame::run(const std::string& filePath, const std::string& musicPath) {
                         totalPausedTime += clock.getElapsedTime().asSeconds() - pauseStartTime;
                     }
                 }
+                if (isPaused && event.key.code == sf::Keyboard::M) {
+                    backgroundMusic.stop();
+                    isPaused = false;
+                    return;
+                }
             }
             uiManager.handleEvent(event);
         }
@@ -273,7 +286,9 @@ void MainGame::run(const std::string& filePath, const std::string& musicPath) {
         if (isPaused) {
             window->clear(sf::Color::Black);
             window->draw(pauseText);
+            window->draw(returnToMenuText);
             window->display();
+            
             continue;
         }
 
@@ -355,7 +370,7 @@ void MainGame::run(const std::string& filePath, const std::string& musicPath) {
                         scoreBreakdown.push_back("bad");
                     }
                     it->fading = true;
-                    it->fadeTimer = clock.getElapsedTime().asSeconds();
+                    it->fadeTimer = clock.getElapsedTime().asSeconds()  - totalPausedTime;
                 } else {
                     window->draw(it->shape);
                     window->draw(it->keyLabel);
@@ -380,4 +395,3 @@ void MainGame::run(const std::string& filePath, const std::string& musicPath) {
         window->display();
     }
 }
-

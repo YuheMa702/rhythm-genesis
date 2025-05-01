@@ -79,6 +79,7 @@ private:
 
     bool isPaused = false;
     sf::Text pauseText;
+    sf::Text returnToMenuText;
 
     float pauseStartTime = 0.f;
     float totalPausedTime = 0.f;
@@ -97,6 +98,7 @@ private:
         sf::Color(87, 117, 144),
         sf::Color(39, 125, 161)
     };
+    
 
 public:
     MainGame(sf::RenderWindow* window);
