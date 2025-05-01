@@ -1,10 +1,44 @@
 // src/UI/MainMenu.cpp
+
+#include <iostream>
+#include <filesystem>
+#include <vector>
+#include <string>
+#include <algorithm>
 #include "MainMenu.hpp"
 #include "UploadUI.hpp"
 #include "BeatMapEditor.hpp"
 #include <spdlog/spdlog.h>
 #include "tinyfiledialogs.h" // make sure tinyfiledialogs is available
 #include "UILabel.hpp"
+namespace fs = std::filesystem;
+
+std::vector<std::string> getOggFiles(const std::string& folderPath) {
+    std::vector<std::string> oggFiles;
+
+    for (const auto& entry : fs::directory_iterator(folderPath)) {
+        if (entry.is_regular_file() && entry.path().extension() == ".ogg") {
+            spdlog::info("getOggFile: {}", entry.path().string());
+            oggFiles.push_back(entry.path().filename().stem().string()); // or .string() for full path
+        }
+    }
+    std::sort(oggFiles.begin(), oggFiles.end());  // Sort alphabetically
+    return oggFiles;
+}
+
+std::vector<std::string> getJsonFiles(const std::string& folderPath) {
+    std::vector<std::string> jsonFiles;
+
+    for (const auto& entry : fs::directory_iterator(folderPath)) {
+        if (entry.is_regular_file() && entry.path().extension() == ".json") {
+            spdlog::info("getOggFile: {}", entry.path().string());
+            jsonFiles.push_back(entry.path().filename().stem().string()); // or .string() for full path
+        }
+    }
+    return jsonFiles;
+}
+
+
 
 MainMenu::MainMenu(sf::RenderWindow* window) : window(window) {
     auto winSize = window->getSize();
@@ -67,12 +101,13 @@ MainMenu::MainMenu(sf::RenderWindow* window) : window(window) {
     float marginX = 20.0f;
     float marginY = songListFontSize * 1.5;
 
-    std::vector<std::string> songs = {
-        "Song 1", "Song 2", "Song 3", "Song 4", "Song 5",
-        "Song 6", "Song 7", "Song 8", "Song 9", "Song 10",
-        "Song 11", "Song 12", "Song 13", "Song 14", "Song 15",
-        "Song 16", "Song 17", "Song 18", "Song 19", "Song 20",
-    };
+    // hardcoded song list
+    // std::vector<std::string> songs = {
+    //     "Song 1", "Song 2", "Song 3", "Song 4",
+    // };
+
+    songs = getOggFiles("../src/Game/music/");
+    //std::vector<std::string> songs = getOggFiles("../assets/music/");
     songList = new UIScrollableList(songListX, songListY, songListWidth, songListHeight, songs, songListFontSize, marginX, marginY);
 
     uiManager.addElement(title);
@@ -93,6 +128,7 @@ MainMenu::~MainMenu() {
 }
 
 void MainMenu::run() {
+    songs = getOggFiles("../src/Game/music/");
     while (window->isOpen()) {
         sf::Event event;
         while (window->pollEvent(event)) {
@@ -107,19 +143,37 @@ void MainMenu::run() {
                         std::string clickedSong = label->getText();
                         spdlog::info("Song: {}", clickedSong);
                         //hard code selections for now, update this later
-                        if(clickedSong == "Song 1"){
-                            jsonPath = "../src/Game/json/gameTest.json";
-                            songPath = "../assets/music/retro-game-arcade-short.ogg";
-                        }else if(clickedSong == "Song 2"){
-                            jsonPath = "../src/Game/json/clair-de-lune.json";
-                            songPath = "../assets/music/Clair-de-Lune.ogg";
-                        }else if(clickedSong == "Song 3"){
-                            jsonPath = "../src/Game/json/clair-de-lune-chords.json";
-                            songPath = "../assets/music/Clair-de-Lune.ogg";
-                        }else if(clickedSong == "Song 4"){
-                            jsonPath = "../src/Game/json/clair-de-lune-single.json";
-                            songPath = "../assets/music/Clair-de-Lune.ogg";
+                        // if(clickedSong == "Song 1"){
+                        //     jsonPath = "../src/Game/json/gameTest.json";
+                        //     songPath = "../assets/music/retro-game-arcade-short.ogg";
+                        // }else if(clickedSong == "Song 2"){
+                        //     jsonPath = "../src/Game/json/clair-de-lune.json";
+                        //     songPath = "../assets/music/Clair-de-Lune.ogg";
+                        // }else if(clickedSong == "Song 3"){
+                        //     jsonPath = "../src/Game/json/clair-de-lune-chords.json";
+                        //     songPath = "../assets/music/Clair-de-Lune.ogg";
+                        // }else if(clickedSong == "Song 4"){
+                        //     jsonPath = "../src/Game/json/clair-de-lune-single.json";
+                        //     songPath = "../assets/music/Clair-de-Lune.ogg";
+                        // }
+
+
+                        // if(clickedSong == "Song 1"){
+                        //     jsonPath = "../src/Game/json/gameTest.json";
+                        //     songPath = "../assets/music/retro-game-arcade-short.ogg";
+                        // }else if(clickedSong == "Song 2"){
+                        //     jsonPath = "../src/Game/json/clair-de-lune.json";
+                        //     songPath = "../assets/music/Clair-de-Lune.ogg";
+                        // }
+
+                        for (auto& song : songs) {
+                            spdlog::info("song: {}", song);
+                            if (clickedSong == song) {
+                                jsonPath = "../src/Game/json/" + song + ".json";
+                                songPath = "../src/Game/music/" + song + ".ogg";
+                            };
                         }
+
                         menuRunning = false;
                         return;
                     }

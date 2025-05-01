@@ -17,6 +17,7 @@ private:
 
     // UI elements (allocated dynamically to persist for the menu’s lifetime)
     UILabel* title;
+    std::vector<std::string> songs;
     UIScrollableList* songList;
     UIButton* uploadButton;
     UIButton* beatMapEditorButton;

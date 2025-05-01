@@ -55,8 +55,8 @@ BeatMapEditor::BeatMapEditor(sf::RenderWindow* window) : window(window) {
         spdlog::info("Saved beatmap.json with {} entries.", beatmapStrings.size());
     });
 
-    waveformViewer = new WaveformViewer(screenWidth * 0.2f, screenHeight * 0.1f,
-                                        screenWidth * 0.6f, screenHeight * 0.6f);
+    waveformViewer = new WaveformViewer(screenWidth * 0.2f, screenHeight * 0.4f,
+                                        screenWidth * 0.6f, screenHeight * 0.2f);
 
     waveformViewer->setOnSeekCallback([this](float newProgress) {
         if (buffer.getDuration().asSeconds() > 0) {
