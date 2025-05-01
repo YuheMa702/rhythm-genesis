@@ -70,8 +70,8 @@ bool MainGame::parseGame(const std::string& filePath, float time) {
         spawnedNotes.resize(gameData.size(), false);
         loaded = true;
         firstBlockTime = gameData[0]["time"].get<float>();
-        sf::sleep(sf::seconds(2));
-        clock.restart();
+        // sf::sleep(sf::seconds(2));
+        // clock.restart();
     }
 
     for (size_t i = 0; i < gameData.size(); ++i) {
@@ -79,7 +79,7 @@ bool MainGame::parseGame(const std::string& filePath, float time) {
 
             size_t notesSpawned = 0;
             for (int lane : gameData[i]["lanes"]) {
-                spawnShape(lane);
+                spawnShape(lane, time);
                 notesSpawned++;
             }
 
@@ -94,13 +94,13 @@ bool MainGame::parseGame(const std::string& filePath, float time) {
 }
 
 //create a falling block at time/location set by JSON parser
-void MainGame::spawnShape(int col) {
+void MainGame::spawnShape(int col, float time) {
     sf::RectangleShape newShape({screenWidth / 5, 50.f});
     newShape.setFillColor(sf::Color::Green);
     
     std::random_device rd;
     std::mt19937 gen(rd());
-    std::uniform_int_distribution<int> distColor(0, 10);
+    std::uniform_int_distribution<int> distColor(0, 9);
     float newX = col * (screenWidth / 5);
 
     newShape.setFillColor(tileColors[distColor(gen)]);
@@ -112,7 +112,7 @@ void MainGame::spawnShape(int col) {
     keyLabelHolder.setFillColor(sf::Color::White);
     keyLabelHolder.setPosition(newX + (screenWidth / 10) - 10, -40.f);
 
-    fallingShapes.push_back({newShape, keyLabelHolder, clock.getElapsedTime().asSeconds()});
+    fallingShapes.push_back({newShape, keyLabelHolder, time});
 }
 
 //displays the score once game finishes, then returns to main menu
@@ -214,7 +214,7 @@ void MainGame::displayScore() {
     window->draw(scoreText);
 
     window->display();
-    sf::sleep(sf::seconds(4));
+    sf::sleep(sf::seconds(45));
 }
 
 void MainGame::playMusic(const std::string& musicPath){
@@ -239,9 +239,10 @@ void MainGame::reset() {
     spawnedShape = false;
     totalPausedTime = 0;
     isPaused = false;
+    musicStarted = false;
 
     lastRowTime = -1.0f;
-    firstBlockTime = 500.f;
+    firstBlockTime = 0.f;
 
     clock.restart();
     backgroundMusic.stop();
@@ -254,8 +255,9 @@ void MainGame::reset() {
 void MainGame::run(const std::string& filePath, const std::string& musicPath) {
     while (window->isOpen()) {
         //add some sort of start delay variable
-        if (timeToLine - firstBlockTime - .1f >= clock.getElapsedTime().asSeconds()){
+        if ((timeToLine - firstBlockTime - .1f<= clock.getElapsedTime().asSeconds()) && !musicStarted){
             playMusic(musicPath);
+            musicStarted = true;
         }
         sf::Event event;
         while (window->pollEvent(event)) {
@@ -268,8 +270,10 @@ void MainGame::run(const std::string& filePath, const std::string& musicPath) {
                         backgroundMusic.pause();
                         pauseStartTime = clock.getElapsedTime().asSeconds();
                     } else {
-                        backgroundMusic.play();
                         totalPausedTime += clock.getElapsedTime().asSeconds() - pauseStartTime;
+                        float gameTime = clock.getElapsedTime().asSeconds() - totalPausedTime - (timeToLine - firstBlockTime - .1f);
+                        backgroundMusic.setPlayingOffset(sf::seconds(gameTime));
+                        backgroundMusic.play();
                     }
                 }
                 if (isPaused && event.key.code == sf::Keyboard::M) {

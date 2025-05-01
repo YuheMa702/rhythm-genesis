@@ -98,12 +98,14 @@ private:
         sf::Color(87, 117, 144),
         sf::Color(39, 125, 161)
     };
+
+    bool musicStarted;
     
 
 public:
     MainGame(sf::RenderWindow* window);
     void run(const std::string& filePath, const std::string& musicPath);
-    void spawnShape(int col);
+    void spawnShape(int col, float time);
     bool parseGame(const std::string& filePath, float time);
     void displayScore();
     void playMusic(const std::string& musicPath);
