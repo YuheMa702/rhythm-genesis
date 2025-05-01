@@ -37,8 +37,10 @@ int main() {
     spdlog::info("Starting Rhythm Genesis Main Menu...");
 
     sf::VideoMode desktop = sf::VideoMode::getDesktopMode();
-    unsigned int screenWidth = desktop.width;
-    unsigned int screenHeight = desktop.height;
+    // unsigned int screenWidth = desktop.width;
+    // unsigned int screenHeight = desktop.height;
+    unsigned int screenWidth = 1200;
+    unsigned int screenHeight = 800;
                             
     sf::RenderWindow window(sf::VideoMode(screenWidth, screenHeight), "Rhythm Genesis - Main Menu", sf::Style::Close);
     window.setFramerateLimit(30);
