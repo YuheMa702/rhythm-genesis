@@ -5,7 +5,8 @@
 #include <random>
 #include <fstream>
 
-// Set stuff up for game
+
+//set stuff up for game
 MainGame::MainGame(sf::RenderWindow* window) : window(window) {
     auto winSize = window->getSize();
     screenWidth = static_cast<float>(winSize.x);
@@ -13,20 +14,21 @@ MainGame::MainGame(sf::RenderWindow* window) : window(window) {
     float colWidth = screenWidth / 5;
 
     font.loadFromFile("../assets/fonts/golem-script.ttf");
-    font1.loadFromFile("../assets/fonts/arial.ttf");
+    font1.loadFromFile("../assets/fonts/arial.ttf"); //add font to proj folder
 
     line = sf::RectangleShape({screenWidth, 5.f});
     line.setFillColor(sf::Color::Black);
-    line.setPosition({0, TOP_LINE + 25.f});
+    line.setPosition({0, ((4 * screenHeight)/5) + 25.f});
 
+    //create the timing lines at bottom of screen
     line1 = sf::RectangleShape({screenWidth, 5.f});
     line1.setFillColor(sf::Color::White);
-    line1.setPosition({0, TOP_LINE + 50.f});
+    line1.setPosition({0, ((4 * screenHeight)/5) + 50.f});
 
     line2 = sf::RectangleShape({screenWidth, 5.f});
     line2.setFillColor(sf::Color::White);
-    line2.setPosition({0, TOP_LINE});
-
+    line2.setPosition({0, ((4 * screenHeight)/5)});
+    
     pauseText.setFont(font);
     pauseText.setString("PAUSED\nPress ESC to Resume");
     pauseText.setCharacterSize(40);
@@ -40,13 +42,22 @@ MainGame::MainGame(sf::RenderWindow* window) : window(window) {
     returnToMenuText.setPosition(screenWidth / 2.f - returnToMenuText.getGlobalBounds().width / 2.f, screenHeight / 2.f + 50.f);
 
     laneWidth = screenWidth / 5.f;
+
     timeToLine = TIME_TO_LINE;
+    //dont think i need these anymore?
     spawnInterval = 1.0f;
     lastSpawnTime = 0.0f;
+
+    
+    //might not need this
     timeStamp = 0;
 }
 
+//read from JSON file, create falling notes at correct time stamps
 bool MainGame::parseGame(const std::string& filePath, float time) {
+    // static std::vector<bool> spawnedNotes;
+    // static json gameData;
+
     if (!loaded) {
         std::ifstream file(filePath);
         if (!file.is_open()) {
@@ -59,28 +70,39 @@ bool MainGame::parseGame(const std::string& filePath, float time) {
         spawnedNotes.resize(gameData.size(), false);
         loaded = true;
         firstBlockTime = gameData[0]["time"].get<float>();
+        // sf::sleep(sf::seconds(2));
+        // clock.restart();
     }
 
     for (size_t i = 0; i < gameData.size(); ++i) {
         if (!spawnedNotes[i] && time >= gameData[i]["time"].get<float>()) {
+
+            size_t notesSpawned = 0;
             for (int lane : gameData[i]["lanes"]) {
                 spawnShape(lane, time);
+                notesSpawned++;
             }
+
             spawnedNotes[i] = true;
             lastRowTime = time;
             gameOver = true;
             return true;
         }
     }
+
     return false;
 }
 
+//create a falling block at time/location set by JSON parser
 void MainGame::spawnShape(int col, float time) {
     sf::RectangleShape newShape({screenWidth / 5, 50.f});
+    newShape.setFillColor(sf::Color::Green);
+    
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_int_distribution<int> distColor(0, 9);
     float newX = col * (screenWidth / 5);
+
     newShape.setFillColor(tileColors[distColor(gen)]);
     newShape.setPosition({newX, -50.f});
 
@@ -93,110 +115,109 @@ void MainGame::spawnShape(int col, float time) {
     fallingShapes.push_back({newShape, keyLabelHolder, time});
 }
 
+//displays the score once game finishes, then returns to main menu
 void MainGame::displayScore() {
     backgroundMusic.stop();
-    displayScoreLoop();
-    // Reset score state to avoid bar stretching on next game
-    scoreBreakdown.clear();
-    totalScoreGraph.clear();
-}
+    float startX = 50.f;
+    float boxWidth = ((screenWidth - 100.f) / scoreBreakdown.size()) - 5.f;
+    float boxHeight = 20.f;
+    window->clear(sf::Color::Black);
 
-
-void MainGame::displayScoreLoop() {
-    float displayStartTime = clock.getElapsedTime().asSeconds() - totalPausedTime;
-
-    if (scoreBreakdown.empty() || totalScoreGraph.empty()) return;
-    float stableScoreBarWidth = ((screenWidth - 100.f) / scoreBreakdown.size()) - 5.f;
-    float stableGraphBarWidth = (screenWidth - 100.f) / totalScoreGraph.size();
-
-    while (window->isOpen()) {
-        float currentTime = clock.getElapsedTime().asSeconds() - totalPausedTime;
-        sf::Event event;
-        while (window->pollEvent(event)) {
-            if (event.type == sf::Event::Closed) return;
-            if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::M) return;
+    //displays a line at the top with a colored box for each individual hit;
+    //red = bad, yellow = good, green = excellent
+    for (const auto& hit : scoreBreakdown) {
+        sf::RectangleShape hitBox(sf::Vector2f(boxWidth, boxHeight));
+        if (hit == "excellent") {
+            hitBox.setFillColor(sf::Color::Green);
+        } else if (hit == "good") {
+            hitBox.setFillColor(sf::Color::Yellow);
+        } else {
+            hitBox.setFillColor(sf::Color::Red);
         }
-        if (currentTime - displayStartTime >= 5.f) return;
-
-        window->clear(sf::Color::Black);
-
-        float startX = 50.f;
-        float boxHeight = 20.f;
-        for (const auto& hit : scoreBreakdown) {
-            sf::RectangleShape hitBox(sf::Vector2f(stableScoreBarWidth, boxHeight));
-            hitBox.setFillColor(hit == "excellent" ? sf::Color::Green : (hit == "good" ? sf::Color::Yellow : sf::Color::Red));
-            hitBox.setPosition(startX, 50.f);
-            window->draw(hitBox);
-            startX += stableScoreBarWidth + 5.f;
-        }
-
-        sf::RectangleShape graphBackground(sf::Vector2f(screenWidth - 100.f, 150.f));
-        graphBackground.setFillColor(sf::Color(30, 30, 30));
-        graphBackground.setPosition(50.f, 350.f);
-        window->draw(graphBackground);
-
-        float maxScore = *std::max_element(totalScoreGraph.begin(), totalScoreGraph.end());
-        float graphHeight = 150.f;
-        float graphBottomY = 500.f;
-
-        sf::Vertex yAxis[] = {
-            sf::Vertex(sf::Vector2f(50.f, 350.f)),
-            sf::Vertex(sf::Vector2f(50.f, 500.f))
-        };
-        window->draw(yAxis, 2, sf::Lines);
-
-        std::vector<std::pair<float, std::string>> yLabels = {
-            {500.f, "0"}, {(425.f), "50"}, {350.f, "100"}
-        };
-
-        for (const auto& [y, text] : yLabels) {
-            sf::Text label;
-            label.setFont(font);
-            label.setString(text);
-            label.setCharacterSize(14);
-            label.setFillColor(sf::Color::White);
-            label.setPosition(10.f, y - 10.f);
-            window->draw(label);
-        }
-
-        startX = 50.f;
-        int timeMarker = 0;
-
-        for (size_t i = 0; i < totalScoreGraph.size(); ++i) {
-            float normalized = totalScoreGraph[i] / maxScore;
-            float barHeight = normalized * graphHeight;
-            sf::RectangleShape bar(sf::Vector2f(stableGraphBarWidth, barHeight));
-            bar.setFillColor(sf::Color::Green);
-            bar.setPosition(startX, graphBottomY - barHeight);
-            window->draw(bar);
-            if (i % 10 == 0) {
-                sf::Text timeLabel;
-                timeLabel.setFont(font);
-                timeLabel.setString(std::to_string(timeMarker) + "s");
-                timeLabel.setCharacterSize(12);
-                timeLabel.setFillColor(sf::Color::White);
-                timeLabel.setPosition(startX, 505.f);
-                window->draw(timeLabel);
-                timeMarker += 2;
-            }
-            startX += stableGraphBarWidth;
-        }
-
-        scoreText.setFont(font);
-        scoreText.setString("Score: " + std::to_string(score));
-        scoreText.setCharacterSize(50);
-        scoreText.setFillColor(sf::Color::White);
-        scoreText.setPosition(screenWidth / 2 - scoreText.getGlobalBounds().width / 2, screenHeight / 3);
-        window->draw(scoreText);
-
-        window->draw(returnToMenuText);
-        window->display();
+        hitBox.setPosition(startX, 50.f);
+        window->draw(hitBox);
+        startX += boxWidth + 5.f;
     }
+
+    //displays a graph that shows score over time
+    sf::RectangleShape graphBackground(sf::Vector2f(screenWidth - 100.f, 150.f));
+    graphBackground.setFillColor(sf::Color(30, 30, 30));
+    graphBackground.setPosition(50.f, 350.f);
+    window->draw(graphBackground);
+    float maxScore = totalScoreGraph.empty() ? 1.f : *std::max_element(totalScoreGraph.begin(), totalScoreGraph.end());
+    float graphHeight = 150.f;
+    float graphBottomY = 500.f;
+    float graphTopY = graphBottomY - graphHeight;
+
+    sf::Vertex yAxis[] = {
+        sf::Vertex(sf::Vector2f(50.f, 350.f)),
+        sf::Vertex(sf::Vector2f(50.f, 500.f))
+    };
+    window->draw(yAxis, 2, sf::Lines);
+
+    std::vector<std::pair<float, std::string>> yLabels = {
+        {graphBottomY, "0"},
+        {(graphTopY + graphBottomY) / 2, "50"},
+        {graphTopY, "100"}
+    };
+
+    for (const auto& [y, text] : yLabels) {
+        sf::Text label;
+        label.setFont(font);
+        label.setString(text);
+        label.setCharacterSize(14);
+        label.setFillColor(sf::Color::White);
+        label.setPosition(10.f, y - 10.f);
+        window->draw(label);
+        sf::Text percent;
+        percent.setFont(font1);
+        percent.setString("%");
+        percent.setCharacterSize(14);
+        percent.setFillColor(sf::Color::White);
+        percent.setPosition(label.getPosition().x + label.getLocalBounds().width + 2.f, y - 10.f);
+        window->draw(percent);
+    }
+
+    // graph bars + timestamps
+    startX = 50.f;
+    boxWidth = (screenWidth - 100.f) / totalScoreGraph.size();
+    int timeMarker = 0;
+
+    for (size_t i = 0; i < totalScoreGraph.size(); ++i) {
+        float normalized = totalScoreGraph[i] / maxScore;
+        float barHeight = normalized * graphHeight;
+        sf::RectangleShape bar(sf::Vector2f(boxWidth, barHeight));
+        bar.setFillColor(sf::Color::Green);
+        bar.setPosition(startX, graphBottomY - barHeight);
+        window->draw(bar);
+        if (i % 10 == 0) {
+            sf::Text timeLabel;
+            timeLabel.setFont(font);
+            timeLabel.setString(std::to_string(timeMarker) + "s");
+            timeLabel.setCharacterSize(12);
+            timeLabel.setFillColor(sf::Color::White);
+            timeLabel.setPosition(startX, 505.f);
+            // window->draw(timeLabel);
+            timeMarker += 2;
+        }
+
+        startX += boxWidth;
+    }
+
+    //display actual score
+    scoreText.setFont(font);
+    scoreText.setString("Score: " + std::to_string(score));
+    scoreText.setCharacterSize(50);
+    scoreText.setFillColor(sf::Color::White);
+    scoreText.setPosition(screenWidth / 2 - scoreText.getGlobalBounds().width / 2, screenHeight / 3);
+
+    window->draw(scoreText);
+
+    window->display();
+    sf::sleep(sf::seconds(4));
 }
 
-
-
-void MainGame::playMusic(const std::string& musicPath) {
+void MainGame::playMusic(const std::string& musicPath){
     if (!backgroundMusic.openFromFile(musicPath)) {
         spdlog::error("music not work");
     } else {
@@ -210,6 +231,7 @@ void MainGame::reset() {
     fallingShapes.clear();
     scoreBreakdown.clear();
     totalScoreGraph.clear();
+
     score = 0;
     scoreTimer = 0.f;
     gameOver = false;
@@ -218,43 +240,43 @@ void MainGame::reset() {
     totalPausedTime = 0;
     isPaused = false;
     musicStarted = false;
-    musicEnded = false;
-    musicEndTime = -1.0f;
+
     lastRowTime = -1.0f;
     firstBlockTime = 0.f;
+
     clock.restart();
     backgroundMusic.stop();
+    
     pressed = {false, false, false, false, false};
 }
 
-
-
-
+//this is a very ugly function that I'm too lazy to fix as long as there aren't
+//any bugs
 void MainGame::run(const std::string& filePath, const std::string& musicPath) {
     while (window->isOpen()) {
-        if ((timeToLine - firstBlockTime - 0.1f <= clock.getElapsedTime().asSeconds()) && !musicStarted) {
+        //add some sort of start delay variable
+        if ((timeToLine - firstBlockTime - DELAY_CONST <= clock.getElapsedTime().asSeconds()) && !musicStarted){
             playMusic(musicPath);
             musicStarted = true;
         }
-
         sf::Event event;
         while (window->pollEvent(event)) {
             if (event.type == sf::Event::Closed)
                 window->close();
             if (event.type == sf::Event::KeyPressed) {
-                if (event.key.code == sf::Keyboard::Escape && !musicEnded) {
+                if (event.key.code == sf::Keyboard::Escape) {
                     isPaused = !isPaused;
                     if (isPaused) {
                         backgroundMusic.pause();
                         pauseStartTime = clock.getElapsedTime().asSeconds();
                     } else {
                         totalPausedTime += clock.getElapsedTime().asSeconds() - pauseStartTime;
-                        float gameTime = clock.getElapsedTime().asSeconds() - totalPausedTime - (timeToLine - firstBlockTime - 0.1f);
+                        float gameTime = clock.getElapsedTime().asSeconds() - totalPausedTime - (timeToLine - firstBlockTime - DELAY_CONST);
                         backgroundMusic.setPlayingOffset(sf::seconds(gameTime));
                         backgroundMusic.play();
                     }
                 }
-                if ((isPaused || musicEnded) && event.key.code == sf::Keyboard::M) {
+                if (isPaused && event.key.code == sf::Keyboard::M) {
                     backgroundMusic.stop();
                     isPaused = false;
                     return;
@@ -262,69 +284,64 @@ void MainGame::run(const std::string& filePath, const std::string& musicPath) {
             }
             uiManager.handleEvent(event);
         }
-
-        float currentTime = clock.getElapsedTime().asSeconds() - totalPausedTime;
-
-        // Check if music has ended
-        if (backgroundMusic.getStatus() == sf::Music::Stopped && musicStarted && !musicEnded) {
-            musicEnded = true;
-            musicEndTime = currentTime;
-        }
-
-        // Auto-return to menu 60 seconds after music ends
-        if (musicEnded && currentTime - musicEndTime >= 60.0f) {
-            backgroundMusic.stop();
-            return;
-        }
-
+        
         window->clear(sf::Color::Black);
 
         if (isPaused) {
+            window->clear(sf::Color::Black);
             window->draw(pauseText);
             window->draw(returnToMenuText);
             window->display();
+            
             continue;
         }
 
-        scoreTimer += currentTime;
-        if (scoreTimer >= 10.f && score > 0) {
-            scoreTimer = 0.f;
-            totalScoreGraph.push_back(static_cast<float>(score));
-        }
+        float currentTime = clock.getElapsedTime().asSeconds() - totalPausedTime;
 
+        //track score for displays at the end
+        scoreTimer += currentTime;
+        if (scoreTimer >= 10.f && score > 0){
+            scoreTimer = 0.f;
+            totalScoreGraph.push_back((float)score);
+        }
         spawnedShape = parseGame(filePath, currentTime);
 
         for (auto it = fallingShapes.begin(); it != fallingShapes.end();) {
             float elapsedTime = currentTime - it->spawnTime;
-            float distance = TOP_LINE;
+            float distance = (screenHeight * 4)/5;
             float speed = distance / timeToLine;
 
-            if (it->fading) {
+            //draw blocks and handle the fade out animations
+            if (it->fading == true) {
                 float fadeDuration = 0.33f;
                 float timeSinceFade = currentTime - it->fadeTimer;
                 float alphaFactor = 1.f - (timeSinceFade / fadeDuration);
-                int alpha = static_cast<int>(255 * alphaFactor);
+
+                sf::Color shapeColor = it->shape.getFillColor();
+                sf::Color labelColor = it->keyLabel.getFillColor();
+            
+                int alpha = static_cast<int>(255 * (alphaFactor));
+            
                 if (alpha <= 0) {
                     it = fallingShapes.erase(it);
                     continue;
                 } else {
-                    sf::Color shapeColor = it->shape.getFillColor();
-                    sf::Color labelColor = it->keyLabel.getFillColor();
                     shapeColor.a = alpha;
                     labelColor.a = alpha;
                     it->shape.setFillColor(shapeColor);
                     it->keyLabel.setFillColor(labelColor);
+
                     float scaleFactor = 1.f + 0.2f * (1.f - alphaFactor);
                     it->shape.setScale(scaleFactor, scaleFactor);
                     it->keyLabel.setScale(scaleFactor, scaleFactor);
                 }
-
                 window->draw(it->shape);
                 window->draw(it->keyLabel);
-                ++it;
+                it++;
                 continue;
-            }
-
+            } 
+            
+            //track block positions
             it->shape.setPosition(it->shape.getPosition().x, -50.f + speed * elapsedTime);
             it->keyLabel.setPosition(it->keyLabel.getPosition().x, -40.f + speed * elapsedTime);
 
@@ -333,45 +350,44 @@ void MainGame::run(const std::string& filePath, const std::string& musicPath) {
             } else {
                 boundingBoxBlock = it->shape.getGlobalBounds();
                 boundingBoxLine = line.getGlobalBounds();
+                float pos = it->shape.getPosition().x;
+                
+                //handle score tracking and deleting of blocks on key presses
                 int laneIndex = static_cast<int>(it->shape.getPosition().x / laneWidth);
                 sf::Keyboard::Key expectedKey = keyBindings[laneIndex];
-
                 if (boundingBoxBlock.intersects(boundingBoxLine) && sf::Keyboard::isKeyPressed(expectedKey)) {
                     float posY = it->shape.getPosition().y;
-                    float lineY = line.getPosition().y + 5.f;
+                    float lineY = line.getPosition().y + (5.f);
                     float blockCenter = posY + (it->shape.getSize().y / 2);
                     float diff = blockCenter - lineY;
-
-                    if (std::abs(diff) < 5.f) {
+                    if(diff < 5.f && diff > -5.f){
                         score += 10;
                         it->shape.setFillColor(sf::Color::Green);
                         scoreBreakdown.push_back("excellent");
-                    } else if (std::abs(diff) <= 15.f) {
+                    }else if((diff <= 15.f && diff >= 5.f) || (diff >= -15.f && diff <= -5.f)){
                         score += 5;
                         it->shape.setFillColor(sf::Color::Yellow);
                         scoreBreakdown.push_back("good");
-                    } else if (std::abs(diff) <= 45.f) {
+                    }else if((diff <= 45.f && diff > 15.f) || (diff >= -45.f && diff < -15.f)){
                         score += 1;
                         it->shape.setFillColor(sf::Color::Red);
                         scoreBreakdown.push_back("bad");
                     }
-
                     it->fading = true;
-                    it->fadeTimer = currentTime;
+                    it->fadeTimer = clock.getElapsedTime().asSeconds()  - totalPausedTime;
                 } else {
                     window->draw(it->shape);
                     window->draw(it->keyLabel);
-                    ++it;
+                    it++;
                 }
             }
         }
 
         if (fallingShapes.empty() && gameOver) {
             displayScore();
-            // reset();  // Clean slate for next game
-            return;
+            break;
         }
-
+        
         scoreText.setFont(font);
         scoreText.setString("Score: " + std::to_string(score));
         scoreText.setCharacterSize(30);
@@ -380,11 +396,6 @@ void MainGame::run(const std::string& filePath, const std::string& musicPath) {
         window->draw(scoreText);
         window->draw(line1);
         window->draw(line2);
-
-        if (musicEnded) {
-            window->draw(returnToMenuText);
-        }
-
         window->display();
     }
 }
