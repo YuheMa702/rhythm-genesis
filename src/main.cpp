@@ -34,13 +34,15 @@ int main() {
 
     // Initialize logging
 
+    //"../assets/music/retro-game-arcade-short.ogg"
+
     spdlog::info("Starting Rhythm Genesis Main Menu...");
 
     sf::VideoMode desktop = sf::VideoMode::getDesktopMode();
-    // unsigned int screenWidth = desktop.width;
-    // unsigned int screenHeight = desktop.height;
-    unsigned int screenWidth = 1200;
-    unsigned int screenHeight = 800;
+    unsigned int screenWidth = desktop.width;
+    unsigned int screenHeight = desktop.height;
+    // unsigned int screenWidth = 1200;
+    // unsigned int screenHeight = 800;
                             
     sf::RenderWindow window(sf::VideoMode(screenWidth, screenHeight), "Rhythm Genesis - Main Menu", sf::Style::Close);
     window.setFramerateLimit(30);
@@ -48,7 +50,17 @@ int main() {
     spdlog::info("Detected screen size: {}x{}", screenWidth, screenHeight);
 
     MainMenu mainMenu(&window);
-    mainMenu.run();
+    MainGame mainGame(&window);
+    while (window.isOpen()){
+        if(mainMenu.menuRunning){
+            mainMenu.run();
+        }
+        else{
+            mainGame.reset();
+            mainGame.run(mainMenu.jsonPath, mainMenu.songPath);
+            mainMenu.menuRunning = true;
+        }
+    }
     return 0;
 }
 

@@ -6,6 +6,7 @@
 #include <SFML/Graphics.hpp>
 #include <spdlog/spdlog.h>
 #include <string>
+#include <functional>
 
 class UILabel : public UIElement {
 private:
@@ -15,7 +16,9 @@ private:
     sf::Color normalColor = sf::Color::White;
     sf::Color hoverColor = sf::Color::Yellow;
 
+
 public:
+    
     UILabel(const std::string& label, float x, float y, int fontSize) : fontSize(fontSize) {
         position = {x, y};
 
@@ -37,6 +40,15 @@ public:
         text.setPosition(x, y);
     }
 
+    //Added to help MainMenu find which song was selected
+    const std::string getText() const {
+        return text.getString().toAnsiString();
+    }
+
+    sf::FloatRect getGlobalBounds() const {
+        return text.getGlobalBounds();
+    }
+
     // Handle mouse events: change color on hover and log clicks.
     virtual void handleEvent(const sf::Event& event) override {
         if (event.type == sf::Event::MouseMoved) {
@@ -52,7 +64,7 @@ public:
             if (text.getGlobalBounds().contains(mousePos)) {
                 spdlog::info("{} was clicked!", text.getString().toAnsiString());
             }
-        }
+        } 
     }
 
     void draw(sf::RenderWindow& window) override {

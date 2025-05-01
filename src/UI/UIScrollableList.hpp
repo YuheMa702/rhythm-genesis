@@ -8,6 +8,7 @@
 #include <string>
 #include <SFML/Graphics.hpp>
 #include <algorithm>
+#include <functional>
 
 class UIScrollableList : public UIElement {
 private:
@@ -23,7 +24,7 @@ public:
     UIScrollableList(float x, float y, float width, float height,
                      const std::vector<std::string>& itemStrings, int fontSize = 18,
                      float marginX = 5.0f, float marginY = 5.0f)
-        : scrollOffset(0), fontSize(fontSize), marginX(marginX), marginY(marginY) {
+        : scrollOffset(0), fontSize(fontSize), marginX(marginX), marginY(marginY){
         position = {x, y};
         size = {width, height};
 
@@ -75,6 +76,10 @@ public:
             items[i]->setPosition(position.x + marginX, newY);
             items[i]->draw(window);
         }
+    }
+
+    const std::vector<UILabel*>& getLabels() const {
+        return items;
     }
 
     void handleEvent(const sf::Event& event) override {
