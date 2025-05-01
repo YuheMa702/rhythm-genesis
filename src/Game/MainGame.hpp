@@ -67,7 +67,8 @@ private:
     float firstBlockTime = 500.f; 
 
     const float TOP_LINE = 475.f;
-    const float TIME_TO_LINE = 3.f;
+    const float TIME_TO_LINE = 3.5f;
+    const float DELAY_CONST = .1f
 
     float lastRowTime = -1.0f;
     const float rowCooldown = 1.f;

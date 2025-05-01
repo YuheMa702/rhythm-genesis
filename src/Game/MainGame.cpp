@@ -18,16 +18,16 @@ MainGame::MainGame(sf::RenderWindow* window) : window(window) {
 
     line = sf::RectangleShape({screenWidth, 5.f});
     line.setFillColor(sf::Color::Black);
-    line.setPosition({0, TOP_LINE + 25.f});
+    line.setPosition({0, ((4 * screenHeight)/5) + 25.f});
 
     //create the timing lines at bottom of screen
     line1 = sf::RectangleShape({screenWidth, 5.f});
     line1.setFillColor(sf::Color::White);
-    line1.setPosition({0, TOP_LINE + 50.f});
+    line1.setPosition({0, ((4 * screenHeight)/5) + 50.f});
 
     line2 = sf::RectangleShape({screenWidth, 5.f});
     line2.setFillColor(sf::Color::White);
-    line2.setPosition({0, TOP_LINE});
+    line2.setPosition({0, ((4 * screenHeight)/5)});
     
     pauseText.setFont(font);
     pauseText.setString("PAUSED\nPress ESC to Resume");
@@ -214,7 +214,7 @@ void MainGame::displayScore() {
     window->draw(scoreText);
 
     window->display();
-    sf::sleep(sf::seconds(45));
+    sf::sleep(sf::seconds(4));
 }
 
 void MainGame::playMusic(const std::string& musicPath){
@@ -255,7 +255,7 @@ void MainGame::reset() {
 void MainGame::run(const std::string& filePath, const std::string& musicPath) {
     while (window->isOpen()) {
         //add some sort of start delay variable
-        if ((timeToLine - firstBlockTime - .1f<= clock.getElapsedTime().asSeconds()) && !musicStarted){
+        if ((timeToLine - firstBlockTime - DELAY_CONST <= clock.getElapsedTime().asSeconds()) && !musicStarted){
             playMusic(musicPath);
             musicStarted = true;
         }
@@ -271,7 +271,7 @@ void MainGame::run(const std::string& filePath, const std::string& musicPath) {
                         pauseStartTime = clock.getElapsedTime().asSeconds();
                     } else {
                         totalPausedTime += clock.getElapsedTime().asSeconds() - pauseStartTime;
-                        float gameTime = clock.getElapsedTime().asSeconds() - totalPausedTime - (timeToLine - firstBlockTime - .1f);
+                        float gameTime = clock.getElapsedTime().asSeconds() - totalPausedTime - (timeToLine - firstBlockTime - DELAY_CONST);
                         backgroundMusic.setPlayingOffset(sf::seconds(gameTime));
                         backgroundMusic.play();
                     }
@@ -308,7 +308,7 @@ void MainGame::run(const std::string& filePath, const std::string& musicPath) {
 
         for (auto it = fallingShapes.begin(); it != fallingShapes.end();) {
             float elapsedTime = currentTime - it->spawnTime;
-            float distance = TOP_LINE;
+            float distance = (screenHeight * 4)/5;
             float speed = distance / timeToLine;
 
             //draw blocks and handle the fade out animations

@@ -83,10 +83,8 @@ MainMenu::MainMenu(sf::RenderWindow* window) : window(window) {
 
     // Demo list of songs.
     std::vector<std::string> songs = {
-        "Song 1", "Song 2", "Song 3", "Song 4", "Song 5",
-        "Song 6", "Song 7", "Song 8", "Song 9", "Song 10",
-        "Song 1", "Song 2", "Song 3", "Song 4", "Song 5",
-        "Song 6", "Song 7", "Song 8", "Song 9", "Song 10",
+        "Clair De Lune short", "Clair De Lune", "Clair De Lune Chords", 
+        "Clair De Lune Single", "Moonlight Sonata"
     };
     songList = new UIScrollableList(songListX, songListY, songListWidth, songListHeight, songs, songListFontSize, marginX, marginY);
 
@@ -123,18 +121,21 @@ void MainMenu::run() {
                         std::string clickedSong = label->getText();
                         spdlog::info("Song: {}", clickedSong);
                         //hard code selections for now, update this later
-                        if(clickedSong == "Song 1"){
+                        if(clickedSong == "Clair De Lune short"){
                             jsonPath = "../src/Game/json/gameTest.json";
-                            songPath = "../assets/music/retro-game-arcade-short.ogg";
-                        }else if(clickedSong == "Song 2"){
+                            songPath = "../assets/music/Clair-de-Lune.ogg";
+                        }else if(clickedSong == "Clair De Lune"){
                             jsonPath = "../src/Game/json/clair-de-lune.json";
                             songPath = "../assets/music/Clair-de-Lune.ogg";
-                        }else if(clickedSong == "Song 3"){
+                        }else if(clickedSong == "Clair De Lune Chords"){
                             jsonPath = "../src/Game/json/clair-de-lune-chords.json";
                             songPath = "../assets/music/Clair-de-Lune.ogg";
-                        }else if(clickedSong == "Song 4"){
+                        }else if(clickedSong == "Clair De Lune Single"){
                             jsonPath = "../src/Game/json/clair-de-lune-single.json";
                             songPath = "../assets/music/Clair-de-Lune.ogg";
+                        }else if(clickedSong == "Moonlight Sonata"){
+                            jsonPath = "../src/Game/json/moonlight-sonata.json";
+                            songPath = "../assets/music/Moonlight-Sonata.ogg";
                         }
                         menuRunning = false;
                         return;
